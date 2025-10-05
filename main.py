@@ -186,12 +186,14 @@ def part1_2(stock1, stock2, lags):
     plt.xlabel("Time")
     plt.ylabel("Price")
     plt.grid(True, alpha=0.1)
+    #plt.savefig("stock1_ts.png")
     plt.show()
 
     # ACF plot stock1
     plot_acf(data_stock1, lags=lags, alpha=0.05, zero=True, color='#cd5c5c')
     plt.title(f"SACF of {stock1} (lags 0-{lags})")
     plt.grid(True, alpha=0.1)
+    #plt.savefig("stock1_sacf.png")
     plt.show()
     
     # ts plot stock2
@@ -201,12 +203,14 @@ def part1_2(stock1, stock2, lags):
     plt.xlabel("Time")
     plt.ylabel("Price")
     plt.grid(True, alpha=0.1)
+    #plt.savefig("stock2_ts.png")
     plt.show()
 
     # ACF plot stock2
     plot_acf(data_stock2, lags=lags, alpha=0.05, zero=True, color='#cd5c5c')
     plt.title(f"SACF of {stock2} (lags 0-{lags})")
     plt.grid(True, alpha=0.1)
+    #plt.savefig("stock2_sacf.png")
     plt.show()
     
 def part1_3(p_max):
@@ -240,7 +244,7 @@ def part1_4():
 if __name__ == "__main__":
     monteCarlo_part1() 
     
-    part1_2('INTEL', 'MICROSOFT', lags=12)
+    part1_2('INTEL', 'APPLE', lags=12)
     
     p_max = int(np.ceil(12*(T1/100)**0.25)) # rule of thumb for max lags
     part1_3(p_max) 
