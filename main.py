@@ -237,11 +237,92 @@ def part1_3(p_max):
         else:
             print(r'We fail to reject the null hypothesis (unit root)' f" at a 10% significance level.\n")        
         
-def part1_4():
+def part1_4(p_max):
+    # isolate data and first difference
     MS_data, EXXON_data = data1_df['MICROSOFT'], data1_df['EXXON_MOBIL']
+    MS_diffdata, EXXON_diffdata = MS_data.diff().dropna(), EXXON_data.diff().dropna()
+    
+    
+    # plot data and first difference
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(11, 4), constrained_layout=True)
+    
+    axes[0].plot(MS_data, color='#4682b4', linewidth=1.5)
+    axes[0].set_title(f"Daily Microsoft Stock Price")
+    axes[0].set_xlabel("Time")
+    axes[0].set_ylabel("Price")
+    axes[0].grid(True, alpha=0.1)
+    
+    axes[1].plot(MS_diffdata, color='#4682b4', linewidth=1.5)
+    axes[1].set_title(f"First Difference of Microsoft Stock Price")
+    axes[1].set_xlabel("Time")
+    axes[1].set_ylabel("First Difference of Price")
+    axes[1].grid(True, alpha=0.1)
+    plt.savefig("microsoft_diff.png")
+    plt.show()
+    
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(11, 4), constrained_layout=True)
+    
+    axes[0].plot(EXXON_data, color='#4682b4', linewidth=1.5)
+    axes[0].set_title(f"Daily Exxon Stock Price")
+    axes[0].set_xlabel("Time")
+    axes[0].set_ylabel("Price")
+    axes[0].grid(True, alpha=0.1)
+    
+    axes[1].plot(EXXON_diffdata, color='#4682b4', linewidth=1.5)
+    axes[1].set_title(f"First Difference of Exxon Stock Price")
+    axes[1].set_xlabel("Time")
+    axes[1].set_ylabel("First Difference of Price")
+    axes[1].grid(True, alpha=0.1)
+    plt.savefig("exxon_diff.png")
+    plt.show()
+    
+    
+    # ADF for Microsoft diffdata
+    adf_n, p_val_n, used_lag_n, n_obs_n, crit_vals_n, icbest_n = adfuller(x=MS_diffdata, maxlag=p_max, regression='n', autolag='AIC')   #  no constant/trend 
+    adf_c, p_val_c, used_lag_c, n_obs_c, crit_vals_c, icbest_c = adfuller(x=MS_diffdata, maxlag=p_max, regression='c', autolag='AIC')   # constant 
+    adf_ct, p_val_ct, used_lag_ct, n_obs_ct, crit_vals_ct, icbest_ct = adfuller(x=MS_diffdata, maxlag=p_max, regression='ct', autolag='AIC')   # constant and trend 
+
+    AIC = [icbest_n, icbest_c, icbest_ct]
+    ADF = [adf_n, adf_c, adf_ct]
+    crit_vals = {}
+    crit_vals[0], crit_vals[1], crit_vals[2] = crit_vals_n, crit_vals_c, crit_vals_ct
+    model = ['no constant/trend', 'a constant', 'a constant and trend']
+    
+    index = np.argmin(AIC)
+        
+    print(f"Data: First Difference of Microsoft Stock Price")
+    print(f"The best ADF specification is the model with {model[index]}. We have ADF = {ADF[index]} and the 1% critical value is {crit_vals[index]['1%']}.")
+    if ADF[index] < crit_vals[index]['1%']:
+        print(r'We reject the null hypothesis (unit root)' f" at a 1% significance level.\n")
+    else:
+        print(r'We fail to reject the null hypothesis (unit root)' f" at a 1% significance level.\n")
+    
+    # ADF for Exxon diffdata
+    adf_n, p_val_n, used_lag_n, n_obs_n, crit_vals_n, icbest_n = adfuller(x=EXXON_diffdata, maxlag=p_max, regression='n', autolag='AIC')   #  no constant/trend 
+    adf_c, p_val_c, used_lag_c, n_obs_c, crit_vals_c, icbest_c = adfuller(x=EXXON_diffdata, maxlag=p_max, regression='c', autolag='AIC')   # constant 
+    adf_ct, p_val_ct, used_lag_ct, n_obs_ct, crit_vals_ct, icbest_ct = adfuller(x=EXXON_diffdata, maxlag=p_max, regression='ct', autolag='AIC')   # constant and trend 
+
+    AIC = [icbest_n, icbest_c, icbest_ct]
+    ADF = [adf_n, adf_c, adf_ct]
+    crit_vals = {}
+    crit_vals[0], crit_vals[1], crit_vals[2] = crit_vals_n, crit_vals_c, crit_vals_ct
+    model = ['no constant/trend', 'a constant', 'a constant and trend']
+    
+    index = np.argmin(AIC)
+
+    print(f"Data: First Difference of Exxon Mobil Stock Price")
+    print(f"The best ADF specification is the model with {model[index]}. We have ADF = {ADF[index]} and the 1% critical value is {crit_vals[index]['1%']}.")
+    if ADF[index] < crit_vals[index]['1%']:
+        print(r'We reject the null hypothesis (unit root)' f" at a 1% significance level.\n")
+    else:
+        print(r'We fail to reject the null hypothesis (unit root)' f" at a 1% significance level.\n")
+    
+    # Investigate contemporaneous relation between Xt and Yt
+
+    
     
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     monteCarlo_part1() 
     
     part1_2('INTEL', 'APPLE', lags=12)
@@ -249,9 +330,7 @@ if __name__ == "__main__":
     p_max = int(np.ceil(12*(T1/100)**0.25)) # rule of thumb for max lags
     part1_3(p_max) 
     
-    part1_4() ############################ Investigate whether X has a significant influence on Y. Keep in mind that performing regressions may be problematic if both series are I(1). 
-              ############################ (I'm sure both series have an integration order larger than 0). 
-              ############################ Use ADF from previous to determine order of both series, and then use appropriately differenced data for regression, and then determine whether effect of variable is significant?
+    part1_4(p_max)
 
     monteCarlo_part2() 
 
