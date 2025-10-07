@@ -275,7 +275,7 @@ def part1_4(p_max):
     axes[1].grid(True, alpha=0.1)
     plt.savefig("exxon_diff.png")
     plt.show()
-    
+
     
     # ADF for Microsoft diffdata
     adf_n, p_val_n, used_lag_n, n_obs_n, crit_vals_n, icbest_n = adfuller(x=MS_diffdata, maxlag=p_max, regression='n', autolag='AIC')   #  no constant/trend 
@@ -316,11 +316,22 @@ def part1_4(p_max):
         print(r'We reject the null hypothesis (unit root)' f" at a 1% significance level.\n")
     else:
         print(r'We fail to reject the null hypothesis (unit root)' f" at a 1% significance level.\n")
-    
-    # Investigate contemporaneous relation between Xt and Yt
 
     
+    # Investigate contemporaneous relation between Xt and Yt
+    EXXON_diffdata = sm.add_constant(EXXON_diffdata)
+    model = sm.OLS(MS_diffdata, EXXON_diffdata).fit()
+    print(model.summary())
     
+    residuals = model.resid
+    k = int(np.sqrt(len(residuals)))
+    bg_stat, bg_pval, _, _ = acorr_breusch_godfrey(model, nlags=k)
+    print(f"Breusch–Godfrey test (lag={k}): stat={bg_stat:.2f}, p-value={bg_pval:.3f}")
+    if bg_pval < 0.05:
+        print("Residuals show autocorrelation (at 5% level).\n")
+    else:
+        print("Residuals are consistent with white noise (at 5% level).\n")
+        
 
 if __name__ == "__main__": 
     monteCarlo_part1() 
