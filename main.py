@@ -331,19 +331,109 @@ def part1_4(p_max):
         print("Residuals show autocorrelation (at 5% level).\n")
     else:
         print("Residuals are consistent with white noise (at 5% level).\n")
-        
+
+def part2_2():
+    print("\n--- PART 2.2: Plotting Consumption and Income Data and ACFs ---")
+    cons_series = data2_df['CONS']
+    inc_series = data2_df['INC']
+
+    fig, axes = plt.subplots(2, 2, figsize=(14, 8), constrained_layout=True)
+    axes[0, 0].plot(cons_series, color='#007acc');
+    axes[0, 0].set_title("Aggregate Consumption");
+    axes[0, 0].grid(True, alpha=0.2)
+    plot_acf(cons_series, lags=12, ax=axes[0, 1])
+    axes[1, 0].plot(inc_series, color='#e85f02');
+    axes[1, 0].set_title("Aggregate Household Income");
+    axes[1, 0].grid(True, alpha=0.2)
+    plot_acf(inc_series, lags=12, ax=axes[1, 1])
+    plt.show()
+
+
+def part2_3():
+    print("\n--- PART 2.3: Testing for Cointegration (Engle-Granger Method) ---")
+    cons_series = data2_df['CONS']
+    inc_series = data2_df['INC']
+
+    # cointegrating regression
+    X = sm.add_constant(inc_series)
+    cointegrating_reg = sm.OLS(cons_series, X).fit()
+    residuals = cointegrating_reg.resid
+
+    print(
+        f"Estimated Coefficients: Intercept = {cointegrating_reg.params[0]:.4f}, Slope = {cointegrating_reg.params[1]:.4f}")
+
+    # plot residuals
+    plt.figure(figsize=(10, 4));
+    plt.plot(residuals);
+    plt.title("Residuals from Cointegrating Regression");
+    plt.grid(True, alpha=0.2);
+    plt.show()
+
+    # adf test for unit root
+    adf_test_results = adfuller(residuals, autolag='AIC', regression='n')
+    adf_statistic = adf_test_results[0]
+    lags_used = adf_test_results[2]
+
+    print(f"ADF Lags Selected by AIC: {lags_used}")
+    print(f"Cointegration Test Statistic (ADF on residuals): {adf_statistic:.4f}")
+
+    # get the critical values from McKinnon table
+    _, _, coint_crit_vals = coint(cons_series, inc_series)
+    crit_val_10pct = coint_crit_vals[2]
+
+    print(f"10% MacKinnon critical value for cointegration test: {crit_val_10pct:.4f}")
+
+    # Final conclusion based on the correct comparison.
+    if adf_statistic < crit_val_10pct:
+        print(
+            "\nThe test statistic is less than the 10% critical value. We reject the null hypothesis of no-cointegration.")
+    else:
+        print(
+            "\nThe test statistic is not less than the 10% critical value. We fail to reject the null hypothesis of no-cointegration.")
+
+    return residuals
+
+
+def part2_4(residuals, max_lags=5):
+    print("\n--- PART 2.4: Estimating the Error Correction Model (ECM) ---")
+    cons_series = data2_df['CONS']
+    inc_series = data2_df['INC']
+
+    delta_cons = cons_series.diff()
+    delta_inc = inc_series.diff()
+    ec_term = residuals.shift(1)
+
+    ecm_df = pd.DataFrame({'delta_cons': delta_cons, 'delta_inc': delta_inc, 'ec_term': ec_term})
+    for i in range(1, max_lags + 1):
+        ecm_df[f'd_cons_L{i}'] = delta_cons.shift(i)
+        ecm_df[f'd_inc_L{i}'] = delta_inc.shift(i)
+    ecm_df.dropna(inplace=True)
+
+    best_aic, best_model, best_lags = np.inf, None, (0, 0)
+    Y = ecm_df['delta_cons']
+
+    for p in range(max_lags + 1):
+        for q in range(max_lags + 1):
+            X_cols = ['ec_term']
+            if p > 0: X_cols.extend([f'd_cons_L{i}' for i in range(1, p + 1)])
+            if q > 0: X_cols.extend([f'd_inc_L{i}' for i in range(1, q + 1)])
+            X = sm.add_constant(ecm_df[X_cols])
+            model = sm.OLS(Y, X).fit()
+            if model.aic < best_aic:
+                best_aic, best_model, best_lags = model.aic, model, (p, q)
+
+    print(f"Best model selected by AIC has {best_lags[0]} lag(s) of delta_cons and {best_lags[1]} lag(s) of delta_inc.")
 
 if __name__ == "__main__": 
-    monteCarlo_part1() 
-    
+    monteCarlo_part1()
     part1_2('INTEL', 'APPLE', lags=12)
-    
     p_max = int(np.ceil(12*(T1/100)**0.25)) # rule of thumb for max lags
     part1_3(p_max) 
-    
     part1_4(p_max)
 
     monteCarlo_part2() 
-
+    part2_2()
+    residuals = part2_3()
+    part2_4(residuals)
     
     
