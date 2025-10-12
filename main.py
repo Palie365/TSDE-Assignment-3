@@ -13,6 +13,7 @@ import seaborn as sns
 np.random.seed(42)
 
 data1_df = pd.read_csv('data_tsde_assignment_3_part_1.csv')
+data2_df = pd.read_csv('data_tsde_assignment_3_part_2.csv')
 cols = data1_df.columns
 T1 = data1_df.shape[0]
 
